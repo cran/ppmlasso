@@ -1,0 +1,6 @@
+import(spatstat, methods)
+export(diagnose, diagnose.ppmlasso, env.var, envelope.ppmlasso, findres, point.interactions, ppm.dat, ppmlasso, predict.ppmlasso, print.ppmlasso, sample.quad)
+S3method("diagnose", "ppmlasso")
+S3method("predict", "ppmlasso")
+S3method("envelope", "ppmlasso")
+S3method("print", "ppmlasso")

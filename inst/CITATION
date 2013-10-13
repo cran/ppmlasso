@@ -1,0 +1,34 @@
+citHeader("To cite", sQuote("ppmlasso"), "in publications, please use:")
+
+
+
+citEntry(entry = "article",
+
+         title = "Equivalence of MAXENT and Poisson point process models for species distribution modeling in ecology",
+
+         author = personList(
+as.person("Ian W. Renner"),
+                  
+           as.person("David I. Warton")
+),
+
+         journal = "Biometrics",
+
+         volume= "69",
+
+         number = "6",
+
+         pages = "274--281",
+
+         year  = "2013",
+
+
+
+	 textVersion = paste("I.W. Renner and D.I.Warton (2012).",
+
+                             "Equivalence of MAXENT and Poisson point process models for species distribution modeling in ecology.",
+                             "Biometrics 69 274-281.")
+         
+	)
+
+
