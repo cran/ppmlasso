@@ -13,7 +13,7 @@ The key functions in ppmlasso are as follows:
 		\item{\code{\link{findres}}}{Determine the optimal spatial resolution at which to perform analysis}
 		\item{\code{\link{sample.quad}}}{Set up a regular grid of quadrature points}
 		\item{\code{\link{env.var}}}{Interpolate environmental data to species presence locations}
-		\item{\code{\link{ppm.dat}}}{Calculate observation weights and set up design matrix for fitting}
+		\item{\code{\link{ppmdat}}}{Calculate observation weights and set up design matrix for fitting}
 		\item{\code{\link{point.interactions}}}{Calculate interpoint interactions for fitting area-interaction models}
 	}
 \bold{Creating regularisation paths of point process models:}
@@ -31,7 +31,7 @@ The key functions in ppmlasso are as follows:
 
 \author{Ian W. Renner
 
-Maintainer: Ian W. Renner <Ian.Renner@unsw.edu.au>
+Maintainer: Ian W. Renner <Ian.Renner@newcastle.edu.au>
 }
 \references{
 Renner, I.W. & Warton, D.I. (2013). Equivalence of MAXENT and Poisson point process models for 

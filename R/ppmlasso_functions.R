@@ -1,3 +1,39 @@
+CatConvert = function(env.frame)
+{
+	classes   = lapply(env.frame, class)
+	is.cat    = which(classes == "factor")
+	cat.names = names(env.frame)[is.cat]
+	frame.out = env.frame[, which(classes != "factor")]
+	cat.out   = rep(NA, dim(frame.out)[2])
+	for (v in 1:length(is.cat))
+	{
+		current.dim = dim(frame.out)[2]
+		factors = sort(unique(env.frame[, is.cat[v]]))
+		fac.frame = c()
+		for (i in 1:length(factors))
+		{
+			fac.frame = cbind(fac.frame, as.numeric(env.frame[, is.cat[v]] == factors[i]))
+		}
+		fac.frame = data.frame(fac.frame)
+		frame.out = data.frame(frame.out, fac.frame)
+		names(frame.out)[(current.dim + 1):dim(frame.out)[2]] = paste(cat.names[v], ".", factors, sep = "")
+		cat.out = c(cat.out, rep(cat.names[v], dim(fac.frame)[2]))
+	}
+	return(list(X = frame.out, cat.names = cat.out))
+}
+
+CatFrame = function(cat.mat)
+{
+	cat.combine = setdiff(unique(cat.mat$cat.names), NA)
+	frame.out   = cat.mat$X[, is.na(cat.mat$cat.names)]
+	for (i in 1:length(cat.combine))
+	{
+		frame.cat = cat.mat$X[, which(cat.mat$cat.names == cat.combine[i])]
+		frame.out = within(frame.out, {assign(cat.combine[i], frame.cat)})
+	}
+	frame.out
+}
+
 standardise.X = function(mat)
 {
 	X = scale(as.matrix(mat))
@@ -445,12 +481,26 @@ single.lasso = function(y, X, lamb, ob.wt = rep(1, length(y)), alpha = 1, b.init
 	}
 }
 
-ppmlasso = function(formula, sp.xy, env.grid, sp.scale, coord = c("X", "Y"), data = ppm.dat(sp.xy = sp.xy, sp.scale = sp.scale, back.xy = env.grid, coord = c("X","Y"), sp.file = NA, quad.file = NA, file.name = "TestPPM"), lamb = NA, n.fits = 200, ob.wt = NA, criterion = "bic", alpha = 1, family = "poisson", tol = 1.e-9, gamma = 0, init.coef = NA, mu.min = 1.e-16, mu.max = 1/mu.min, r = NA, interactions = NA, availability = NA, max.it = 25, standardise = TRUE)
+ppmlasso = function(formula, sp.xy, env.grid, sp.scale, coord = c("X", "Y"), data = ppmdat(sp.xy = sp.xy, sp.scale = sp.scale, back.xy = env.grid, coord = c("X","Y"), sp.file = NA, quad.file = NA, file.name = "TestPPM"), lamb = NA, n.fits = 200, ob.wt = NA, criterion = "bic", alpha = 1, family = "poisson", tol = 1.e-9, gamma = 0, init.coef = NA, mu.min = 1.e-16, mu.max = 1/mu.min, r = NA, interactions = NA, availability = NA, max.it = 25, standardise = TRUE, n.blocks = NA, block.size = sp.scale*100, seed = 1)
 {
 	error.flag = FALSE
+	formula.out = formula
+	if (class(data) == "list")
+	{
+		use.form = as.character(formula)[2]
+		cat.names = setdiff(unique(data$cat.names), NA)
+		for (i in 1:length(cat.names))
+		{
+			use.form = gsub(cat.names[i], paste(names(data$X)[which(data$cat.names == cat.names[i])], collapse = " + "), use.form)
+		}
+		formula = as.formula(paste("~", use.form))
+		data = data$X
+	}
+	wt.calc = FALSE
 	if (is.na(ob.wt) == TRUE)
 	{
-		ob.wt = data$wt
+		wt.calc = TRUE
+		ob.wt   = data$wt
 	}
 
 	call = match.call()
@@ -521,6 +571,39 @@ ppmlasso = function(formula, sp.xy, env.grid, sp.scale, coord = c("X", "Y"), dat
 		adapt.weights = 1/abs(init.coef)^gamma
 	}
 
+	cv = rep(0, dim(data)[1])
+
+	if (criterion == "blockCV")
+	{
+		cv      = blocks(n.blocks, block.size, data, seed = seed)
+		pred.mu = matrix(NA, dim(data)[1], n.fits)
+	}
+	data.all = data
+	y.all    = y
+	X.all    = X
+	wt.all   = ob.wt
+	if (area.int == TRUE)
+	{
+		interactions.all = interactions
+	}
+
+	for (cv.i in 1:length(unique(cv)))
+	{
+	dat.test = data[cv == cv.i,]
+	data     = data[cv != cv.i,]
+	data$wt  = weights(data[data$Pres == 1,], data[data$Pres == 0,], coord)
+	y        = data$Pres/data$wt
+	X        = X[cv != cv.i,]
+	ob.wt    = ob.wt[cv != cv.i]
+	if (wt.calc == TRUE)
+	{
+		ob.wt = data$wt
+	}
+	if (area.int == TRUE)
+	{
+		interactions = interactions[cv != cv.i]
+	}
+
 	if (is.na(lamb) == TRUE)
 	{
 		new.score  = abs(score.0/adapt.weights)
@@ -534,6 +617,12 @@ ppmlasso = function(formula, sp.xy, env.grid, sp.scale, coord = c("X", "Y"), dat
 	if (is.na(lamb) == FALSE)
 	{
 		lambs = lamb
+	}
+
+	if (criterion == "blockCV")
+	{
+		lambda.max = max(abs(score.int(data$Pres/data$wt, X, ob.wt = data$wt, area.int = area.int, int = interactions, family = poisson())[-1]))	
+		lambs      = exp(seq(0, -12, length.out = n.fits))*lambda.max
 	}
 
 	n.pres     = sum(y > 1.e-8)
@@ -552,6 +641,7 @@ ppmlasso = function(formula, sp.xy, env.grid, sp.scale, coord = c("X", "Y"), dat
 	{
 		X.0 = X
 	}
+
 	mod.0     = glm(y ~ X.0[,-1], family = family, weights = ob.wt)
 	coefs     = matrix(NA, (dim(X)[2] + area.int), (length(lambs) + 1))
 	num.param = rep(NA, (length(lambs) + 1))
@@ -653,11 +743,11 @@ ppmlasso = function(formula, sp.xy, env.grid, sp.scale, coord = c("X", "Y"), dat
 		
 		meth.id  = paste(criterion, "s", sep = "")
 
-		if (criterion == "msi")
+		if (criterion == "msi" | criterion == "blockCV")
 		{
 			choice.id = 1
 		}
-		if (criterion != "msi")
+		if (criterion != "msi" & criterion != "blockCV")
 		{
 			choice.id = max(which.min(get(meth.id)))
 		}
@@ -668,8 +758,98 @@ ppmlasso = function(formula, sp.xy, env.grid, sp.scale, coord = c("X", "Y"), dat
 		mu.hat     = family$linkinv(eta.hat)
 		like.hat   = ll[choice.id]
 
+		assign(paste("coefs.", cv.i, sep = ""), coefs)
+		
+
+		if (criterion == "blockCV")
+		{
+			for (i in 1:length(lambs) - 1)
+			{ #Fix this for predicting to test locations
+				fam.fit = poisson()
+				if (area.int == TRUE)
+				{
+					fam.fit = "area.inter"
+				}
+				cv.fit = list(beta = coefs[,i], s.means = s.means, s.sds = s.sds, family = fam.fit, pt.interactions = interactions, formula = formula, mu = rep(0, dim(data)[1]))
+				if (area.int == TRUE)
+				{
+					pred.mu[cv == cv.i, i] = predict.ppmlasso(cv.fit, newdata = dat.test, interactions = interactions.all[cv == cv.i])
+				}
+				if (area.int != TRUE)
+				{
+					pred.mu[cv == cv.i, i] = predict.ppmlasso(cv.fit, newdata = dat.test)
+				}
+			}
+		}
 	}
-	output = list(betas = coefs, lambdas = lambs, likelihoods = ll, pen.likelihoods = pll, lambda = lambda.hat, beta = beta.hat, mu = mu.hat, likelihood = like.hat, criterion = criterion, family = family$family, gamma = gamma, alpha = alpha, init.coef = init.coef, criterion.matrix = criterion.matrix, data = X.0, pt.interactions = raw.int, wt = ob.wt, pres = data$Pres, x = data$X, y = data$Y, r = r, call = call, formula = formula, s.means = s.means, s.sds = s.sds)
+
+	data  = data.all
+	y     = y.all
+	X     = X.all
+	ob.wt = wt.all
+	if (area.int == TRUE)
+	{
+		interactions = interactions.all
+	}
+
+	} # cv.i
+
+	if (criterion == "blockCV")
+	{
+		l.vec       = apply(pred.mu, 2, unp.likelihood, ob.wt = data$wt, y = data$Pres/data$wt)
+		coef.mat    = matrix(NA, n.blocks, dim(coefs)[1])
+		for (i in 1:n.blocks)
+		{
+			coefs.i       = get(paste("coefs.", i, sep = ""))
+			coef.mat[i, ] = coefs.i[, which.max(l.vec)]
+		}
+		coef.av = apply(coef.mat, 2, mean, na.rm = TRUE)
+		lambda.mult = exp(seq(0, -12, length.out = n.fits))[which.max(l.vec)]
+		if (area.int != TRUE)
+		{
+			lambda.max = max(abs(score.int(data$Pres/data$wt, X, ob.wt = data$wt, family = poisson())[-1]))
+		}	
+
+		if (area.int == TRUE)
+		{
+			lambda.max = max(abs(score.int(data$Pres/data$wt, X, ob.wt = data$wt, family = poisson(), area.int = TRUE, int = scale(interactions))[-1]))
+		}
+		final.fit = try(single.lasso(y.all, X.all, lamb = lambda.mult*lambda.max, ob.wt = wt.all, alpha = alpha, b.init = coef.av, family = family, tol = 1.e-9, gamma = gamma, init.coef = init.coef, area.int = area.int, interactions = interactions, max.it = it.max, standardise = FALSE), TRUE)
+		coefs     = final.fit$b
+		lambs     = lambda.mult*lambda.max
+		gcvs      = NA
+		aics      = NA
+		hqcs      = NA
+		bics      = NA
+		nlgcvs    = NA
+		devs      = final.fit$dev
+		ll        = final.fit$like
+		pll       = final.fit$pen
+		num.param = sum(abs(final.fit$b) > 1.e-7) - 1 - area.int
+
+		if (area.int == TRUE)
+		{
+			X.0 = as.matrix(cbind(X, interactions))
+		}
+		if (area.int != TRUE)
+		{
+			X.0 = X
+		}
+		
+		lambda.hat = lambs
+		beta.hat   = coefs
+		eta.hat    = X.0 %*% beta.hat
+		mu.hat     = family$linkinv(eta.hat)
+		like.hat   = ll
+		criterion.matrix = data.frame(aics, bics, hqcs, gcvs, nlgcvs)
+	}
+
+	family.out = family$family
+	if (area.int == TRUE)
+	{	
+		family.out = "area.inter"
+	}
+	output = list(betas = coefs, lambdas = lambs, likelihoods = ll, pen.likelihoods = pll, lambda = lambda.hat, beta = beta.hat, mu = mu.hat, likelihood = like.hat, criterion = criterion, family = family.out, gamma = gamma, alpha = alpha, init.coef = init.coef, criterion.matrix = criterion.matrix, data = X.0, pt.interactions = raw.int, wt = ob.wt, pres = data$Pres, x = data$X, y = data$Y, r = r, call = call, formula = formula.out, s.means = s.means, s.sds = s.sds, cv.group = cv, n.blocks = n.blocks)
 	class(output) = c("ppmlasso", "list")
 	output
 }
@@ -887,6 +1067,13 @@ interp = function(sp.xy, sp.scale, f, back.xy, coord = c("X","Y"))
 
 env.var = function(sp.xy, env.grid, env.scale, coord = c("X","Y"), file.name = NA)
 {
+	convert = FALSE
+	if (any(lapply(env.grid, class) == "factor"))
+	{
+		convert  = TRUE
+		out.grid = CatConvert(env.grid)
+		env.grid = out.grid$X
+	}
 	x.dat   = sp.xy[,which(names(sp.xy) == coord[1])]
 	y.dat   = sp.xy[,which(names(sp.xy) == coord[2])]
 	x.back  = env.grid[,which(names(env.grid) == coord[1])]
@@ -920,19 +1107,34 @@ env.var = function(sp.xy, env.grid, env.scale, coord = c("X","Y"), file.name = N
 		save(sp.dat, file = save.name)
 		print(paste("Output saved in the file", save.name))
 	}
+	if (convert == TRUE)
+	{
+		sp.dat = list(X = sp.dat, cat.names = out.grid$cat.names)
+	}
 	sp.dat
 }
 
 sample.quad = function(env.grid, sp.scale, coord = c("X", "Y"), file = "Quad")
 {
+	if (any(lapply(env.grid, class) == "factor"))
+	{
+		is.cat    = which(lapply(env.grid, class) == "factor")
+		cat.names = names(env.grid)[is.cat]
+		env.grid  = CatConvert(env.grid)$X	
+	}
 	f.name = list()
 	for(i in 1:length(sp.scale))
 	{
 		i.scale = sp.scale[i]
 		x.col   = which(names(env.grid) == coord[1])
 		y.col   = which(names(env.grid) == coord[2])
-		
-		is.on.scale   = abs((env.grid[,x.col]/i.scale) - round(env.grid[,x.col]/i.scale)) + abs((env.grid[,y.col]/i.scale) - round(env.grid[,y.col]/i.scale)) < 1.e-8
+		x.step  = sort(unique(env.grid[,x.col]))[2] - sort(unique(env.grid[,x.col]))[1]
+		y.step  = sort(unique(env.grid[,y.col]))[2] - sort(unique(env.grid[,y.col]))[1]
+
+		x.o = min(env.grid[,x.col]) - floor(min(env.grid[,x.col])/x.step)*x.step
+		y.o = min(env.grid[,y.col]) - floor(min(env.grid[,y.col])/y.step)*y.step	
+
+		is.on.scale   = abs((env.grid[,x.col]/i.scale) - round(env.grid[,x.col]/i.scale) - x.o) + abs((env.grid[,y.col]/i.scale) - round(env.grid[,y.col]/i.scale) - y.o) < 1.e-8
 	  	dat.quad      = env.grid[is.on.scale,]
 		if (is.na(file) == FALSE)
 		{
@@ -947,34 +1149,37 @@ sample.quad = function(env.grid, sp.scale, coord = c("X", "Y"), file = "Quad")
 		f.name
 }
 
-weights = function(X, Y, sp.scale, Pres)
+weights = function(sp.xy, quad.xy, coord = c("X", "Y"))
 {
-	sc            = sp.scale/1000
-	n             = length(X)	
-	x.working     = round(X/sc)
-	y.working     = round(Y/sc)
-	x.ind         = as.factor(x.working)
-	y.ind         = as.factor(y.working)
-	levels(x.ind) = 1:length(levels(x.ind))
-	levels(y.ind) = 1:length(levels(y.ind))
+	sp.col   = c(which(names(sp.xy) == coord[1]), which(names(sp.xy) == coord[2]))
+	quad.col = c(which(names(quad.xy) == coord[1]), which(names(quad.xy) == coord[2]))
+	
+	X.inc   = sort(unique(quad.xy[,quad.col[1]]))[2] - sort(unique(quad.xy[,quad.col[1]]))[1]
+	Y.inc   = sort(unique(quad.xy[,quad.col[2]]))[2] - sort(unique(quad.xy[,quad.col[2]]))[1]
+	quad.0X = min(quad.xy[,quad.col[1]]) - floor(min(quad.xy[,quad.col[1]])/X.inc)*X.inc
+	quad.0Y = min(quad.xy[,quad.col[2]]) - floor(min(quad.xy[,quad.col[2]])/Y.inc)*Y.inc
 
-	is.Pres    = Pres == 1
-	x.ind.Pres = x.ind[is.Pres]
-	y.ind.Pres = y.ind[is.Pres]
-	wt         = rep(sc^2,length = n)
-	n.pres     = sum(is.Pres)
+	X = c(sp.xy[,quad.col[1]], quad.xy[,quad.col[1]])
+	Y = c(sp.xy[,quad.col[2]], quad.xy[,quad.col[2]])
 
-	for(i in 1:n.pres)
-	{
-		is.in.cell     = x.ind == x.ind.Pres[i] & y.ind == y.ind.Pres[i]
-		wt[is.in.cell] = sc^2 / sum(is.in.cell)
-	}
+	round.X     = round((X - quad.0X)/X.inc)*X.inc
+	round.Y     = round((Y - quad.0Y)/Y.inc)*Y.inc
+	round.id    = paste(round.X, round.Y)
+	round.table = table(round.id)
+	wt          = X.inc*Y.inc/as.numeric(round.table[match(round.id, names(round.table))])
 
 	wt
 }
 
-ppm.dat = function(sp.xy, sp.scale, back.xy, coord = c("X","Y"), sp.dat = env.var(sp.xy = sp.xy, env.scale = sp.scale, env.grid = back.xy, coord = coord, file.name = "SpEnvData"), sp.file = NA, quad.file = NA, file.name = NA)
+ppmdat = function(sp.xy, sp.scale, back.xy, coord = c("X","Y"), sp.dat = env.var(sp.xy = sp.xy, env.scale = sp.scale, env.grid = back.xy, coord = coord, file.name = "SpEnvData"), sp.file = NA, quad.file = NA, file.name = NA)
 {
+	convert = FALSE
+	if (class(sp.dat) == "list")
+	{
+		convert   = TRUE
+		cat.names = sp.dat$cat.names
+		sp.dat    = sp.dat$X
+	}
 	if (is.character(sp.xy) == TRUE)
 	{
 		sp.file = paste(sp.xy, "Env.RData")
@@ -1011,29 +1216,8 @@ ppm.dat = function(sp.xy, sp.scale, back.xy, coord = c("X","Y"), sp.dat = env.va
 	names(quad.dat) = c("X", "Y", names(dat.quad)[quad.var])
 	dat.ppm         = rbind(sp.data, quad.dat)
 	
-	X    = dat.ppm$X
-	Y    = dat.ppm$Y
-	Pres = dat.ppm$Pres
-	n             = length(X)	
-	x.working     = round(X/sp.scale)
-	y.working     = round(Y/sp.scale)
-	x.ind         = as.factor(x.working)
-	y.ind         = as.factor(y.working)
-	levels(x.ind) = 1:length(levels(x.ind))
-	levels(y.ind) = 1:length(levels(y.ind))
+	dat.ppm$wt = weights(sp.data, quad.dat, coord)	
 
-	is.Pres    = Pres == 1
-	x.ind.Pres = x.ind[is.Pres]
-	y.ind.Pres = y.ind[is.Pres]
-	wt         = rep(sp.scale^2,length = n)
-	n.pres     = sum(is.Pres)
-
-	for(i in 1:n.pres)
-	{
-		is.in.cell     = x.ind == x.ind.Pres[i] & y.ind == y.ind.Pres[i]
-		wt[is.in.cell] = sp.scale^2 / sum(is.in.cell)
-	}
-	dat.ppm$wt = wt
 	dimnames(dat.ppm)[[1]] = 1:dim(dat.ppm)[1]
 	if (is.na(file.name) == FALSE)
 	{
@@ -1041,11 +1225,19 @@ ppm.dat = function(sp.xy, sp.scale, back.xy, coord = c("X","Y"), sp.dat = env.va
 		save(dat.ppm, file = save.name)
 		print(paste("Output saved in the file", save.name))
 	}
+	if (convert == TRUE)
+	{
+		dat.ppm = list(X = dat.ppm, cat.names = cat.names)
+	}
 	dat.ppm
 }
 
 point.interactions = function(dat.ppm, r, availability = NA)
 {
+	if (class(dat.ppm) == "list")
+	{
+		dat.ppm = dat.ppm$X
+	}
 	if (any(is.na(availability)))
 	{
 		grain = min(0.5, r/2)
@@ -1233,22 +1425,34 @@ findres = function(scales, lambda = 0, coord = c("X", "Y"), sp.xy, env.grid, for
 	{
 		if (lambda == 0)
 		{
-			data            = ppm.dat(sp.xy = sp.xy, sp.scale = scales[sc], back.xy = env.grid, sp.dat = sp.dat, sp.file = NA, quad.file = NA)
+			data            = ppmdat(sp.xy = sp.xy, sp.scale = scales[sc], back.xy = env.grid, sp.dat = sp.dat, sp.file = NA, quad.file = NA)
 			glm.form        = as.formula(paste("Pres/wt ~ ", as.character(formula)[2], sep = ""))
 			glm.fit         = glm(glm.form, data = data, weights = data$wt, family = poisson())
 			likelihoods[sc] = sum(data$wt*(data$Pres/data$wt*log(glm.fit$fitted) - glm.fit$fitted)) - sum(log(1:sum(data$Pres > 0)))
 		}
 		if (lambda != 0)
 		{
-			sc.fit = ppmlasso(sp.scale = scales[sc], lamb = lambda, data = ppm.dat(sp.xy = sp.xy, sp.scale = scales[sc], back.xy = env.grid, sp.dat = sp.dat, sp.file = NA, quad.file = NA), ...)
+			sc.fit = ppmlasso(sp.scale = scales[sc], lamb = lambda, data = ppmdat(sp.xy = sp.xy, sp.scale = scales[sc], back.xy = env.grid, sp.dat = sp.dat, sp.file = NA, quad.file = NA), ...)
 			likelihoods[sc] = sc.fit$pen.likelihood[1]
 		}
 	}
 	plot(scales, likelihoods, log = "x", type = "o", pch = 16, xlab = "Spatial Resolution", ylab = "Likelihood")
 }
 
-predict.ppmlasso = function(object, ..., newdata)
+predict.ppmlasso = function(object, ..., newdata, interactions = NA)
 {
+	if (any(lapply(newdata, class) == "factor"))
+	{
+		unpacknewdata = CatConvert(newdata)
+		newdata       = unpacknewdata$X
+		cat.names     = setdiff(unique(unpacknewdata$cat.names), NA)
+		use.form = as.character(object$formula)[2]
+		for (i in 1:length(cat.names))
+		{
+			use.form = gsub(cat.names[i], paste(names(newdata)[which(unpacknewdata$cat.names == cat.names[i])], collapse = " + "), use.form)
+		}
+		object$formula = as.formula(paste("~", use.form))
+	}
 	var.0 = which(apply(newdata, 2, var) == 0)
 	if (length(var.0) > 0)
 	{
@@ -1265,8 +1469,71 @@ predict.ppmlasso = function(object, ..., newdata)
 		X.var = scale(X.var, center = object$s.means, scale = object$s.sds)
 		X.des = cbind(1, X.var)
 	}
+	if (object$family == "area.inter")
+	{
+		if (is.na(interactions) == TRUE)
+		{
+			if (is.null(object$s.means) == FALSE)
+			{
+				X.des = cbind(X.des, min(scale(object$pt.interactions)))
+			}
+			if (is.null(object$s.means) == TRUE)
+			{
+				X.des = cbind(X.des, 0)
+			}
+		}
+		if (is.na(interactions) == FALSE)
+		{
+			if (is.null(object$s.means) == FALSE)
+			{
+				X.des = cbind(X.des, scale(interactions, center = mean(object$pt.interactions), scale = sd(object$pt.interactions)))
+			}
+			if (is.null(object$s.means) == TRUE)
+			{
+				X.des = cbind(X.des, interactions)
+			}
+		}
+	}
 	pred.int = exp(as.matrix(X.des) %*% object$beta)
 	return(pred.int)
 }
 
 setMethod("predict", "ppmlasso", predict.ppmlasso)
+
+blocks = function(n.blocks, block.scale, dat, seed = 1)
+{
+	if (class(dat) == "list")
+	{
+		dat = dat$X
+	}
+	cell.group = rep(0, length(dat$X))
+	n.groups   = ceiling(c(max((dat$X - min(dat$X))/block.scale), max((dat$Y - min(dat$Y))/block.scale)))
+
+	xq = block.scale*(1:n.groups[1]) + min(dat$X)
+	for (i.group in 1:n.groups[1])
+	{
+   		cell.group = cell.group + as.numeric(dat$X > xq[i.group])
+	}
+	
+	yq = block.scale*(1:n.groups[2]) + min(dat$Y)
+	for (i.group in 1:n.groups[2])
+	{
+   		cell.group = cell.group + n.groups[1] * as.numeric(dat$Y > yq[i.group])
+	}
+
+	block.group = factor(cell.group)
+
+	set.seed(seed) #to ensure that you get the same sample each time - useful for back-tracking
+
+	levs       = rep(1:n.blocks, length = length(levels(block.group)))
+	lev.sample = sample(levs)
+
+	levels(block.group) = lev.sample
+	block.group
+}
+
+unp.likelihood = function(ob.wt, y, mu)
+{
+	like = sum(ob.wt*(y*log(mu) - mu)) - sum(log(1:sum(y > 0)))
+	like
+}

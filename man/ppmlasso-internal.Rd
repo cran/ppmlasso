@@ -1,4 +1,7 @@
 \name{ppmlasso-internal}
+\alias{blocks}
+\alias{CatConvert}
+\alias{CatFrame}
 \alias{eta.from.mu}
 \alias{gcv.calc}
 \alias{interp}
@@ -9,10 +12,14 @@
 \alias{score.int}
 \alias{single.lasso}
 \alias{standardise.X}
+\alias{unp.likelihood}
 \alias{weights}
 \title{Internal ppmlasso functions}
 \description{These are internal functions called by the main functions of ppmlasso, but are not generally used directly by the user.}
 \usage{
+blocks(n.blocks, block.scale, dat, seed = 1)
+CatConvert(env.frame)
+CatFrame(cat.mat)
 eta.from.mu(mu, family, mu.min = 1e-16, mu.max = 1/mu.min, eta.min, eta.max)
 gcv.calc(y, X, ob.wt, b.lasso, lambda, alpha = alpha, unp.likelihood = unp.likelihood, 
 penalty = TRUE, family = "poisson", mu.min = 1e-16, mu.max = 1e+16, 
@@ -29,7 +36,8 @@ intercept = NA, family = "gaussian", tol = 1e-09, gamma = 0, init.coef = NA,
 mu.min = 1e-16, mu.max = 1/mu.min, area.int = FALSE, interactions, max.it = 25, 
 standardise = TRUE)
 standardise.X(mat)
-weights(X, Y, sp.scale, Pres)
+unp.likelihood(ob.wt, y, mu)
+weights(sp.xy, quad.xy, coord = c("X", "Y"))
 }
 \author{Ian W. Renner}
 \details{These are generally not called by the user.}

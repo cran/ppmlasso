@@ -3,7 +3,7 @@
 \title{Calculates simulation envelopes for goodness-of-fit}
 \description{This function is analogous to the \code{envelope} function of the \code{spatstat} package.}
 \usage{
-\method{envelope}{ppmlasso}(Y, fun, \dots)
+\method{envelope}{ppmlasso}(Y, fun = Kest, \dots)
 }
 \arguments{
   \item{Y}{A fitted regularisation path of point process models. The simulation envelopes will be calculated for the model that optimises the given criterion.}

@@ -5,12 +5,13 @@
 models) with a sequence of LASSO, adaptive LASSO or elastic net penalties (a "regularisation path").}
 \usage{
 ppmlasso(formula, sp.xy, env.grid, sp.scale, coord = c("X", "Y"), 
-data = ppm.dat(sp.xy = sp.xy, sp.scale = sp.scale, back.xy = env.grid, 
+data = ppmdat(sp.xy = sp.xy, sp.scale = sp.scale, back.xy = env.grid, 
 coord = c("X", "Y"), sp.file = NA, quad.file = NA, file.name = "TestPPM"), 
 lamb = NA, n.fits = 200, ob.wt = NA, criterion = "bic", alpha = 1, 
 family = "poisson", tol = 1e-09, gamma = 0, init.coef = NA, 
 mu.min = 1e-16, mu.max = 1/mu.min, r = NA, interactions = NA, 
-availability = NA, max.it = 25, standardise = TRUE)
+availability = NA, max.it = 25, standardise = TRUE, n.blocks = NA, 
+block.size = sp.scale * 100, seed = 1)
 }
 \arguments{
 \item{formula}{The formula of the fitted model. For a point process model, the correct form is \code{~ variables}.}
@@ -21,14 +22,14 @@ interpolated to the locations of \code{sp.xy} using the \code{\link{env.var}} fu
   \item{env.grid}{The geo-referenced matrix of environmental grids. This matrix is used to
 generate quadrature points using the \code{\link{sample.quad}} function, interpolate environmental
 data to the species locations of \code{sp.xy} using the \code{\link{env.var}} function,
-and calculate observation weights using the \code{\link{ppm.dat}} function, unless the \code{data}
+and calculate observation weights using the \code{\link{ppmdat}} function, unless the \code{data}
 argument is supplied. This creates a data matrix \code{data} which provides the
 variables for the \code{formula} argument.}
   \item{sp.scale}{The spatial resolution at which to define the regular grid of quadrature
 points. \code{\link{sample.quad}} will subsample from the rows of \code{data} that coincide with
 a regular grid at a resolution of \code{sp.scale}.}
   \item{coord}{A vector containing the names of the longitude and latitude coordinates.}
-  \item{data}{An optional data matrix generated from the \code{\link{ppm.dat}} function. Supplying a
+  \item{data}{An optional data matrix generated from the \code{\link{ppmdat}} function. Supplying a
 matrix to \code{data} is an alternative way of providing the environmental variables
 used in the \code{formula} argument, instead of specifying \code{sp.xy} and \code{env.grid}.}
   \item{lamb}{A vector of penalty values that will be used to create the regularisation path.
@@ -37,9 +38,9 @@ If \code{lamb = NA}, the penalty values are automatically generated from the
   \item{n.fits}{The number of models fitted in the regularisation path. If \code{lamb = NA}, the
 \code{n.fits} penalty values will be equally spaced on a logarithmic scale from \eqn{e^{-10}}{exp(-10)}
 to \eqn{\lambda_{max}}{\lambda_{max}}, the smallest penalty that shrinks all parameter coefficients to zero.}
-  \item{ob.wt}{Quadrature weights, usually inherited from the \code{\link{ppm.dat}} function.}
+  \item{ob.wt}{Quadrature weights, usually inherited from the \code{\link{ppmdat}} function.}
   \item{criterion}{The penalisation criteria to be optimised by the regularisation path. The
-options include \code{"aic"}, \code{"bic"}, \code{"hqc"}, \code{"gcv"}, \code{"nlgcv"} and \code{"msi"}.}
+options include \code{"aic"}, \code{"bic"}, \code{"blockCV"}, \code{"hqc"}, \code{"gcv"}, \code{"nlgcv"} and \code{"msi"}.}
   \item{alpha}{The elastic net parameter. The form of the penalty is \deqn{\alpha*\lambda*\sum_{j = 1}^p |\beta_j| + (1 - \alpha)*\lambda*\sum_{j = 1}^p (\beta_j)^2.}{\alpha*\lambda*\sum_{j = 1}^p |\beta_j| + (1 - \alpha)*\lambda*\sum_{j = 1}^p (\beta_j)^2.} 
 The default value \code{alpha = 1} corresponds to a LASSO penalty,
 while \code{alpha = 0} corresponds to a ridge regression penalty.}
@@ -67,6 +68,12 @@ model.}
   \item{standardise}{A logical argument indicating whether the environmental variables
 should be standardised to have mean 0 and variance 1. It is recommended that variables are
 standardised for analysis.}
+  \item{n.blocks}{This argument controls the number of cross validation groups into which the spatial blocks
+are divided if the \code{criterion} argument is set to \code{"blockCV"}. See details.}
+  \item{block.size}{The length of the edges for the spatial blocks created if the \code{criterion} argument 
+is set to \code{"blockCV"}. Only square spatial blocks are currently supported. See details.}
+  \item{seed}{The random seed used for controlling the allocation of spatial blocks to cross validation groups
+if the \code{criterion} argument is set to \code{"blockCV"}.}
 }
 \details{This function fits a regularisation path of point process models provided a list of species locations
 and a geo-referenced grid of environmental data. It is assumed that Poisson point process models (Warton & Shepherd, 2010)
@@ -92,11 +99,19 @@ Note that this form of the penalty is a restricted case of the general elastic n
 
 There are various criteria available for managing the bias-variance tradeoff (Renner, 2013).
 The default choice is BIC, the Bayesian Information Criterion, which has been shown to have
-good performance. An alternative criterion useful when data are sparse is MSI, the maximum score 
+good performance. 
+
+An alternative criterion useful when data are sparse is MSI, the maximum score 
 of the intercept model (Renner, in prep). For a set of \eqn{m} presence locations, the
 MSI penalty is \eqn{\lambda_{MSI} = \lambda_{max}/\sqrt{m}}, where \eqn{\lambda_{max}} is the smallest penalty
 that shrinks all environmental coefficients to zero. The MSI penalty differs from the other criteria in that does
 not require an entire regularisation path to be fitted.
+
+It is also possible to control the magnitude of the penalty by spatial cross validation by setting the 
+\code{criterion} argument to \code{"blockCV"}. The study region is then divided into square blocks with edge
+lengths controlled by the \code{block.size} argument, which are assigned to one of a number of cross validation
+groups controlled by the \code{n.groups} argument. The penalty which maximises the predicted log-likelihood is
+chosen.
 }
 \value{An object of class \code{"ppmlasso"}, with elements:
 \item{betas}{A matrix of fitted coefficients of the \code{n.fits} models.}
@@ -127,6 +142,8 @@ of AIC, BIC, HQC, GCV, and non-linear GCV.}
 \item{formula}{The \code{formula} argument.}
 \item{s.means}{If \code{standardise = TRUE}, the means of each column of \code{data} prior to standardisation.}
 \item{s.sds}{If \code{standardise = TRUE}, the standard deviations of each column of \code{data} prior to standardisation.}
+\item{cv.group}{The cross validation group associated with each point in the data set.}
+\item{n.blocks}{The number of cross validation groups specified.}
 }
 \references{
 Baddeley, A.J. & van Lieshout, M.N.M. (1995). Area-interaction point processes.

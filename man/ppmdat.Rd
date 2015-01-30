@@ -1,11 +1,11 @@
-\name{ppm.dat}
-\alias{ppm.dat}
+\name{ppmdat}
+\alias{ppmdat}
 \title{Prepare data for model fitting}
 \description{This function prepares the data for model fitting. In particular, it
 determines observation weights and sets up the design matrix required for fitting
 a regularisation path.}
 \usage{
-ppm.dat(sp.xy, sp.scale, back.xy, coord = c("X", "Y"), 
+ppmdat(sp.xy, sp.scale, back.xy, coord = c("X", "Y"), 
 sp.dat = env.var(sp.xy = sp.xy, env.scale = sp.scale, 
 env.grid = back.xy, coord = coord, file.name = "SpEnvData"),
 sp.file = NA, quad.file = NA, file.name = NA)
@@ -44,7 +44,7 @@ a quadrature point, and a column \code{wt} of observation weights.}
 }
 \examples{
 data(BlueMountains)
-species.ppm = ppm.dat(sp.xy = BlueMountains$eucalypt, back.xy = BlueMountains$env, 
+species.ppm = ppmdat(sp.xy = BlueMountains$eucalypt, back.xy = BlueMountains$env, 
 sp.scale = 1, file.name = "Sp PPM Data")
 }
 \keyword{Quadrature}

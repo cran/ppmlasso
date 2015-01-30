@@ -1,0 +1,12 @@
+Changes in Version 1.1
+
+Calls to ppmlasso, env.var, ppmdat and sample.quad now allow for categorical variables. A binary column is
+created for each unique factor of a categorical variable.
+
+Added block cross-validation as a way to choose the LASSO or elastic net penalty in a call to ppmlasso.
+
+The function ppm.dat from Version 1.0 has been renamed ppmdat to retain functionality with spatstat.
+
+Fixed bug with sample.quad function so quadrature points no longer need to include the origin.
+
+Fixed bug with predict.ppmlasso function such that point interactions may be included for area-interaction models.

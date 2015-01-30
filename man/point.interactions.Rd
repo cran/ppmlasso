@@ -8,7 +8,7 @@ models.}
 point.interactions(dat.ppm, r, availability = NA)
 }
 \arguments{
-  \item{dat.ppm}{A design matrix generated using the \code{\link{ppm.dat}} function.}
+  \item{dat.ppm}{A design matrix generated using the \code{\link{ppmdat}} function.}
   \item{r}{The radius of point interactions.}
   \item{availability}{An optional binary matrix used in calculating point interactions indicating
 whether locations are available (\code{availability = 1}) or not (\code{availability = 0}). 
@@ -49,7 +49,7 @@ point patterns. \emph{Journal of Statistical Software} \bold{12}, 1-42.
 }
 \examples{
 data(BlueMountains)
-species.ppm = ppm.dat(sp.xy = BlueMountains$eucalypt, back.xy = BlueMountains$env, 
+species.ppm = ppmdat(sp.xy = BlueMountains$eucalypt, back.xy = BlueMountains$env, 
 sp.scale = 1, file.name = "Sp PPM Data") # generate design matrix
 species.int = point.interactions(species.ppm, 2, BlueMountains$availability)
 }
