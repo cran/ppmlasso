@@ -24,7 +24,7 @@ as.person("Ian W. Renner"),
 
 
 
-	 textVersion = paste("I.W. Renner and D.I.Warton (2012).",
+	 textVersion = paste("I.W. Renner and D.I.Warton (2013).",
 
                              "Equivalence of MAXENT and Poisson point process models for species distribution modeling in ecology.",
                              "Biometrics 69 274-281.")

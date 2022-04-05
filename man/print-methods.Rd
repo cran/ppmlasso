@@ -13,6 +13,5 @@ Methods for function \code{\link{print}}
 Prints output for a \code{ppmlasso} object with details controlled by arguments of the 
 \code{\link{print.ppmlasso}} function.
 }
-
 }}
 \keyword{methods}

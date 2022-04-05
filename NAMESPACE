@@ -1,15 +1,14 @@
-import(spatstat, methods)
-export(diagnose, 
-	diagnose.ppmlasso, 
-	env.var, 
-	envelope.ppmlasso, 
-	findres, 
-	point.interactions, 
-	ppmdat, 
-	ppmlasso, 
-	predict.ppmlasso, 
-	print.ppmlasso, 
-	sample.quad)
+import(spatstat.core, spatstat.geom, spatstat, methods, stats)
+importFrom("grDevices", "heat.colors")
+importFrom("graphics", "abline", "legend", "points")
+importFrom("utils", "flush.console")
+importFrom("plyr", "ldply")
+importFrom("lattice", "levelplot")
+importFrom("data.table", "data.table")
+export("diagnose", "diagnose.ppmlasso", "envelope.ppmlasso", "findRes",
+       "getEnvVar", "griddify", "plotFit", "plotPath",
+       "pointInteractions", "ppmdat", "ppmlasso", "predict.ppmlasso",
+       "print.ppmlasso", "sampleQuad")
 S3method("diagnose", "ppmlasso")
 S3method("predict", "ppmlasso")
 S3method("envelope", "ppmlasso")
@@ -17,3 +16,4 @@ S3method("print", "ppmlasso")
 exportClasses(
      "ppmlasso" 
 )
+

@@ -1,12 +1,25 @@
-Changes in Version 1.1
+Changes in Version 1.2
 
-Calls to ppmlasso, env.var, ppmdat and sample.quad now allow for categorical variables. A binary column is
-created for each unique factor of a categorical variable.
+Addition of new functions griddify, plotFit, and plotPath.
 
-Added block cross-validation as a way to choose the LASSO or elastic net penalty in a call to ppmlasso.
+Changed dependency to spatstat.core.
 
-The function ppm.dat from Version 1.0 has been renamed ppmdat to retain functionality with spatstat.
+Several functions have been renamed from Version 1.1 for consistency:
 
-Fixed bug with sample.quad function so quadrature points no longer need to include the origin.
+findRes replaces findres
+getEnvVar replaces env.var
+pointInteractions replaces point.interactions
+sampleQuad replaces sample.quad
 
-Fixed bug with predict.ppmlasso function such that point interactions may be included for area-interaction models.
+calculateGCV replaces gcv.calc
+calculateLikelihood replaces like.calc
+calculateUnpenalisedLikelihood replaces unp.likelihood
+etaFromMu replaces eta.from.mu
+irlsUpdate replaces irls.update
+muFromEta replaces mu.from.eta
+ppmSpatstat replaces ppm.ss
+scoreIntercept replaces score.int
+singleLasso replaces single.lasso
+standardiseX replaces standardise.X
+
+

@@ -1,11 +1,12 @@
-\name{point.interactions}
-\alias{point.interactions}
+\name{pointInteractions}
+\alias{pointInteractions}
+%- Also NEED an '\alias' for EACH other topic documented here.
 \title{Calculate point interactions for area-interaction models}
 \description{This function calculates point interactions at presence locations and
 quadrature points required for fitting a regularisation path of area-interaction
 models.}
 \usage{
-point.interactions(dat.ppm, r, availability = NA)
+pointInteractions(dat.ppm, r, availability = NA)
 }
 \arguments{
   \item{dat.ppm}{A design matrix generated using the \code{\link{ppmdat}} function.}
@@ -50,7 +51,7 @@ point patterns. \emph{Journal of Statistical Software} \bold{12}, 1-42.
 \examples{
 data(BlueMountains)
 species.ppm = ppmdat(sp.xy = BlueMountains$eucalypt, back.xy = BlueMountains$env, 
-sp.scale = 1, file.name = "Sp PPM Data") # generate design matrix
-species.int = point.interactions(species.ppm, 2, BlueMountains$availability)
+sp.scale = 1, datfilename = NA, writefile = FALSE) # generate design matrix
+species.int = pointInteractions(species.ppm, 2, BlueMountains$availability)
 }
 \keyword{Area-interaction models}

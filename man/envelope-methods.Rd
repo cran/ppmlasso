@@ -14,4 +14,3 @@ Creates Monte Carlo simulation envelopes for a given function for a \code{ppmlas
 }
 }}
 \keyword{methods}
-

@@ -5,28 +5,27 @@
 models) with a sequence of LASSO, adaptive LASSO or elastic net penalties (a "regularisation path").}
 \usage{
 ppmlasso(formula, sp.xy, env.grid, sp.scale, coord = c("X", "Y"), 
-data = ppmdat(sp.xy = sp.xy, sp.scale = sp.scale, back.xy = env.grid, 
-coord = c("X", "Y"), sp.file = NA, quad.file = NA, file.name = "TestPPM"), 
-lamb = NA, n.fits = 200, ob.wt = NA, criterion = "bic", alpha = 1, 
-family = "poisson", tol = 1e-09, gamma = 0, init.coef = NA, 
-mu.min = 1e-16, mu.max = 1/mu.min, r = NA, interactions = NA, 
-availability = NA, max.it = 25, standardise = TRUE, n.blocks = NA, 
-block.size = sp.scale * 100, seed = 1)
+data = ppmdat(sp.xy = sp.xy, sp.scale = sp.scale, back.xy = env.grid, coord = c("X","Y"),
+sp.file = NA, quad.file = NA, datfilename = "PPMDat", writefile = writefile), lamb = NA,
+n.fits = 200, ob.wt = NA, criterion = "bic", alpha = 1, family = "poisson", tol = 1.e-9, 
+gamma = 0, init.coef = NA, mu.min = 1.e-16, mu.max = 1/mu.min, r = NA, interactions = NA, 
+availability = NA, max.it = 25, min.lamb = -10, standardise = TRUE, n.blocks = NA, 
+block.size = sp.scale*100, seed = 1, writefile = TRUE)
 }
 \arguments{
-\item{formula}{The formula of the fitted model. For a point process model, the correct form is \code{~ variables}.}
+  \item{formula}{The formula of the fitted model. For a point process model, the correct form is \code{~ variables}.}
   \item{sp.xy}{A matrix of species locations containing at least one column representing
 longitude and one column representing latitude. Environmental variables are
-interpolated to the locations of \code{sp.xy} using the \code{\link{env.var}} function, unless the
+interpolated to the locations of \code{sp.xy} using the \code{\link{getEnvVar}} function, unless the
 \code{data} argument is supplied.}
   \item{env.grid}{The geo-referenced matrix of environmental grids. This matrix is used to
-generate quadrature points using the \code{\link{sample.quad}} function, interpolate environmental
-data to the species locations of \code{sp.xy} using the \code{\link{env.var}} function,
+generate quadrature points using the \code{\link{sampleQuad}} function, interpolate environmental
+data to the species locations of \code{sp.xy} using the \code{\link{getEnvVar}} function,
 and calculate observation weights using the \code{\link{ppmdat}} function, unless the \code{data}
 argument is supplied. This creates a data matrix \code{data} which provides the
 variables for the \code{formula} argument.}
   \item{sp.scale}{The spatial resolution at which to define the regular grid of quadrature
-points. \code{\link{sample.quad}} will subsample from the rows of \code{data} that coincide with
+points. \code{\link{sampleQuad}} will subsample from the rows of \code{data} that coincide with
 a regular grid at a resolution of \code{sp.scale}.}
   \item{coord}{A vector containing the names of the longitude and latitude coordinates.}
   \item{data}{An optional data matrix generated from the \code{\link{ppmdat}} function. Supplying a
@@ -41,8 +40,7 @@ to \eqn{\lambda_{max}}{\lambda_{max}}, the smallest penalty that shrinks all par
   \item{ob.wt}{Quadrature weights, usually inherited from the \code{\link{ppmdat}} function.}
   \item{criterion}{The penalisation criteria to be optimised by the regularisation path. The
 options include \code{"aic"}, \code{"bic"}, \code{"blockCV"}, \code{"hqc"}, \code{"gcv"}, \code{"nlgcv"} and \code{"msi"}.}
-  \item{alpha}{The elastic net parameter. The form of the penalty is \deqn{\alpha*\lambda*\sum_{j = 1}^p |\beta_j| + (1 - \alpha)*\lambda*\sum_{j = 1}^p (\beta_j)^2.}{\alpha*\lambda*\sum_{j = 1}^p |\beta_j| + (1 - \alpha)*\lambda*\sum_{j = 1}^p (\beta_j)^2.} 
-The default value \code{alpha = 1} corresponds to a LASSO penalty,
+  \item{alpha}{The elastic net parameter. The form of the penalty is \deqn{\alpha*\lambda*\sum_{j = 1}^p |\beta_j| + (1 - \alpha)*\lambda*\sum_{j = 1}^p (\beta_j)^2.}{\alpha*\lambda*\sum_{j = 1}^p |\beta_j| + (1 - \alpha)*\lambda*\sum_{j = 1}^p (\beta_j)^2.} The default value \code{alpha = 1} corresponds to a LASSO penalty,
 while \code{alpha = 0} corresponds to a ridge regression penalty.}
   \item{family}{The family of models to be fitted -- \code{family = "poisson"} for Poisson point process models
 or \code{family = "area.inter"} for area-interaction models.}
@@ -57,14 +55,15 @@ is set to \code{mu.min}.}
   \item{mu.max}{The threshold for large fitted values. Any fitted value larger than the threshold
 will be set to \code{mu.max}.}
   \item{r}{The radius of point interactions, required if \code{family = "area.inter"}.}
-  \item{interactions}{A vector of point interactions calculated from the \code{\link{point.interactions}}
+  \item{interactions}{A vector of point interactions calculated from the \code{\link{pointInteractions}}
 function necessary for fitting area-interaction models. If \code{interactions = NA}
 and \code{family = "area.inter"}, point interactions will be automatically calculated
 for radius \code{r} to the locations of \code{data}.}
   \item{availability}{An optional binary matrix used in calculating point interactions indicating
-whether locations are available (1) or not (0). See \code{\link{point.interactions}} for more details.}
+whether locations are available (1) or not (0). See \code{\link{pointInteractions}} for more details.}
   \item{max.it}{The maximum number of iterations of the descent algorithm for fitting the
 model.}
+  \item{min.lamb}{The power \eqn{x} of smallest penalty \eqn{e^x} among the \code{n.fits} models.}
   \item{standardise}{A logical argument indicating whether the environmental variables
 should be standardised to have mean 0 and variance 1. It is recommended that variables are
 standardised for analysis.}
@@ -74,6 +73,7 @@ are divided if the \code{criterion} argument is set to \code{"blockCV"}. See det
 is set to \code{"blockCV"}. Only square spatial blocks are currently supported. See details.}
   \item{seed}{The random seed used for controlling the allocation of spatial blocks to cross validation groups
 if the \code{criterion} argument is set to \code{"blockCV"}.}
+  \item{writefile}{A logical argument passed to the \code{\link{ppmdat}} function to determine whether its output should be written to a file or not, set to \code{TRUE} by default. See the documentation for \code{\link{ppmdat}} for details.}
 }
 \details{This function fits a regularisation path of point process models provided a list of species locations
 and a geo-referenced grid of environmental data. It is assumed that Poisson point process models (Warton & Shepherd, 2010)
@@ -162,7 +162,7 @@ Renner, I.W. & Warton, D.I. (2013). Equivalence of MAXENT and Poisson point proc
 models for species distribution modeling in ecology. \emph{Biometrics} \bold{69}, 274-281.
 
 Renner, I.W. (2013). Advances in presence-only methods in ecology.
-\url{http://unsworks.unsw.edu.au/fapi/datastream/unsworks:11510/SOURCE01}
+\url{https://unsworks.unsw.edu.au/fapi/datastream/unsworks:11510/SOURCE01}
 
 Tibshirani, R. (1996). Regression shrinkage and selection via the lasso. \emph{Journal of
 the Royal Statistical Society, Series B} \bold{58}, 267-288.
@@ -195,15 +195,16 @@ the given criterion from the \code{spatstat} package.
 data(BlueMountains)
 sub.env = BlueMountains$env[BlueMountains$env$Y > 6270 & BlueMountains$env$X > 300,]
 sub.euc = BlueMountains$eucalypt[BlueMountains$eucalypt$Y > 6270 & BlueMountains$eucalypt$X > 300,]
-ppm.form = ~ poly(FC, TMP_MIN, TMP_MAX, RAIN_ANN, degree=2)
-ppm.fit  = ppmlasso(ppm.form, sp.xy = sub.euc, env.grid = sub.env, sp.scale = 1, n.fits = 20)
+ppm.form = ~ poly(FC, TMP_MIN, TMP_MAX, RAIN_ANN, degree = 2)
+ppm.fit  = ppmlasso(ppm.form, sp.xy = sub.euc, env.grid = sub.env, sp.scale = 1, n.fits = 20,
+writefile = FALSE)
 
 #Fit a regularisation path of area-interaction models
 data(BlueMountains)
-ai.form  = ~ poly(FC, TMP_MIN, TMP_MAX, RAIN_ANN, degree=2)
-ai.fit   = ppmlasso(ai.form, sp.xy = sub.euc, 
-env.grid = sub.env, sp.scale = 1, family = "area.inter", 
-r = 2, availability = BlueMountains$availability, n.fits = 20)
+ai.form  = ~ poly(FC, TMP_MIN, TMP_MAX, RAIN_ANN, degree = 2)
+ai.fit   = ppmlasso(ai.form, sp.xy = sub.euc, env.grid = sub.env, sp.scale = 1, 
+family = "area.inter", r = 2, availability = BlueMountains$availability, n.fits = 20,
+writefile = FALSE)
 }
 \keyword{LASSO}
 \keyword{Point process models}

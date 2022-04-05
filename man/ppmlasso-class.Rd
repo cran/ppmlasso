@@ -1,11 +1,11 @@
 \name{ppmlasso-class}
-\Rdversion{1.1}
+\Rdversion{2.0}
 \docType{class}
 \alias{ppmlasso-class}
 
 \title{Class \code{"ppmlasso"}}
 \description{
-A class \code{ppmlasso} which represents a point process model with a LASSO penalty.
+A class \code{ppmlasso} which represents a point process model with a LASSO-type penalty.
 }
 \section{Methods}{
   \describe{
@@ -15,7 +15,6 @@ A class \code{ppmlasso} which represents a point process model with a LASSO pena
     \item{print}{\code{signature(x = "ppmlasso")}: Print the details of a fitted point process model.}
 	 }
 }
-
 \author{
 Ian W. Renner
 }
@@ -23,3 +22,4 @@ Ian W. Renner
 showClass("ppmlasso")
 }
 \keyword{classes}
+
