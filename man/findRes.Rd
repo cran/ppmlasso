@@ -25,7 +25,7 @@ longitude and one column representing latitude, as in \code{\link{ppmlasso}}.}
 }
 \details{This function produces a plot which can be used to judge an optimal spatial resolution for analysis. As the spatial resolution gets finer, the log-likelihood tends to stabilise to a constant value. The largest spatial resolution at which the log-likelihood appears to stabilise may be considered optimal for model fitting.}
 \value{A plot of log-likelihood versus spatial resolution.}
-\references{Renner, I.W. et al (2015). Point process models for presence-only analysis. \emph{Methods in Ecology \& Evolution} \bold{6}, 366-379.}
+\references{Renner, I.W. et al (2015). Point process models for presence-only analysis. \emph{Methods in Ecology and Evolution} \bold{6}, 366-379.}
 \author{Ian W. Renner}
 \examples{
 data(BlueMountains)

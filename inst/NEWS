@@ -1,25 +1,7 @@
-Changes in Version 1.2
+Changes in Version 1.3
 
-Addition of new functions griddify, plotFit, and plotPath.
+Changed dependency to spatstat.explore, spatstat.model, spatstat.geom
+.
 
-Changed dependency to spatstat.core.
-
-Several functions have been renamed from Version 1.1 for consistency:
-
-findRes replaces findres
-getEnvVar replaces env.var
-pointInteractions replaces point.interactions
-sampleQuad replaces sample.quad
-
-calculateGCV replaces gcv.calc
-calculateLikelihood replaces like.calc
-calculateUnpenalisedLikelihood replaces unp.likelihood
-etaFromMu replaces eta.from.mu
-irlsUpdate replaces irls.update
-muFromEta replaces mu.from.eta
-ppmSpatstat replaces ppm.ss
-scoreIntercept replaces score.int
-singleLasso replaces single.lasso
-standardiseX replaces standardise.X
 
 

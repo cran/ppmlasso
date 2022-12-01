@@ -47,8 +47,9 @@ a quadrature point, and a column \code{wt} of observation weights.}
 \code{\link{getEnvVar}} for interpolating environmental data to species presence locations.
 }
 \examples{
-data(BlueMountains)
-species.ppm = ppmdat(sp.xy = BlueMountains$eucalypt, back.xy = BlueMountains$env, 
-sp.scale = 1, datfilename = NA, writefile = FALSE)
+## Do not run because of NOTE Examples with CPU time > 2.5 times elapsed time
+#data(BlueMountains)
+#species.ppm = ppmdat(sp.xy = BlueMountains$eucalypt, back.xy = BlueMountains$env, 
+#sp.scale = 1, datfilename = NA, writefile = FALSE)
 }
 \keyword{Quadrature}

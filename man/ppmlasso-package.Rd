@@ -39,7 +39,7 @@ Maintainer: Ian W. Renner <Ian.Renner@newcastle.edu.au>
 Renner, I.W. & Warton, D.I. (2013). Equivalence of MAXENT and Poisson point process models for 
 species distribution modeling in ecology \emph{Biometrics} \bold{69}, 274-281.
 
-Renner, I.W. et al (2015). Point process models for presence-only analysis. \emph{Methods in Ecology \& Evolution} \bold{6}, 366-379.
+Renner, I.W. et al (2015). Point process models for presence-only analysis. \emph{Methods in Ecology and Evolution} \bold{6}, 366-379.
 
 Renner, I.W., Warton, D.I., & Hui, F.K.C. (2021). What is the effective sample size of a spatial point process? \emph{Australian & New Zealand Journal of Statistics} \bold{63}, 144-158.
 
