@@ -1,7 +1,6 @@
-Changes in Version 1.3
+Changes in Version 1.4
 
-Changed dependency to spatstat.explore, spatstat.model, spatstat.geom
-.
+Fixed documentation with internal spatRes function.
 
 
 

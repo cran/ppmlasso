@@ -2,15 +2,11 @@ citHeader("To cite", sQuote("ppmlasso"), "in publications, please use:")
 
 
 
-citEntry(entry = "article",
+bibentry(bibtype = "article",
 
          title = "Equivalence of MAXENT and Poisson point process models for species distribution modeling in ecology",
 
-         author = personList(
-as.person("Ian W. Renner"),
-                  
-           as.person("David I. Warton")
-),
+         author = c(person(c("Ian", "W."), "Renner"), person(c("David", "I."), "Warton")),
 
          journal = "Biometrics",
 

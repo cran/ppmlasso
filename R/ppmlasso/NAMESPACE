@@ -1,0 +1,20 @@
+export("blocks", "calculateGCV", "calculateLikelihood",
+       "calculateUnpenalisedLikelihood", "catConvert", "catFrame",
+       "decimalCount", "diagnose", "diagnose.ppmlasso", "envelope",
+       "envelope.ppmlasso", "etaFromMu", "findRes", "getEnvVar",
+       "griddify", "interp", "irlsUpdate", "makeMask", "muFromEta",
+       "plotFit", "plotPath", "pointInteractions", "polyNames",
+       "ppmdat", "ppmlasso", "ppmSpatstat", "predict",
+       "predict.ppmlasso", "print", "print.ppmlasso", "sampleQuad",
+       "scoreIntercept", "singleLasso", "spatRes", "standardiseX",
+       "weights", "zapCoord")
+exportMethods(
+    "diagnose",
+    "envelope",
+    "predict",
+    "print" 
+)
+exportClasses(
+    "ppmlasso",
+     "ppm" 
+)

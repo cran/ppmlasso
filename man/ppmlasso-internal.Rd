@@ -15,6 +15,7 @@
 \alias{ppmSpatstat}
 \alias{scoreIntercept}
 \alias{singleLasso}
+\alias{spatRes}
 \alias{standardiseX}
 \alias{weights}
 \alias{zapCoord}
